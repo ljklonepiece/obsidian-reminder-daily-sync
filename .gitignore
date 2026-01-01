@@ -6,9 +6,9 @@
 node_modules
 
 # build
-main.js
+#main.js
 *.js.map
-styles.css
+#styles.css
 
 # obsidian
 data.json
