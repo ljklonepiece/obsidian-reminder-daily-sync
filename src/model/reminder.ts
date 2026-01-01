@@ -31,7 +31,8 @@ export class Reminder {
       this.rowNumber === reminder.rowNumber &&
       this.title === reminder.title &&
       this.time.equals(reminder.time) &&
-      this.file === reminder.file
+      this.file === reminder.file &&
+      this.done === reminder.done
     );
   }
 
@@ -50,14 +51,27 @@ export class Reminders {
   public fileToReminders: Map<string, Array<Reminder>> = new Map();
   public reminders: Array<Reminder> = [];
   public reminderTime?: ReadOnlyReference<Time>;
+  private onChangeCallbacks: Array<() => void> = [];
 
   constructor(private onChange: () => void) {}
+
+  public addOnChange(callback: () => void) {
+    this.onChangeCallbacks.push(callback);
+  }
+
+  private notifyChanged() {
+    this.onChange();
+    this.onChangeCallbacks.forEach(cb => cb());
+  }
 
   public getExpiredReminders(defaultTime: Time): Array<Reminder> {
     const now = new Date().getTime();
     const result: Array<Reminder> = [];
     for (let i = 0; i < this.reminders.length; i++) {
       const reminder = this.reminders[i]!;
+      if (reminder.done) {
+        continue;
+      }
       if (reminder.time.getTimeInMillis(defaultTime) <= now) {
         result.push(reminder);
       } else {
@@ -165,7 +179,7 @@ export class Reminders {
 
     this.sort(reminders);
     this.reminders = reminders;
-    this.onChange();
+    this.notifyChanged();
   }
 
   private sort(reminders: Array<Reminder>) {
@@ -312,6 +326,9 @@ export function groupReminders(
   let previousGroup: Group = generateGroup(now, now, reminderTime, format);
   for (let i = 0; i < sortedReminders.length; i++) {
     const r = sortedReminders[i]!;
+    if (r.done) {
+      continue;
+    }
     if (r.muteNotification) {
       overdueReminders.push(r);
       continue;

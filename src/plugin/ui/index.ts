@@ -180,7 +180,6 @@ export class ReminderPluginUI {
         console.info("done");
         reminder.muteNotification = false;
         this.plugin.fileSystem.updateReminder(reminder, true);
-        this.plugin.reminders.removeReminder(reminder);
         this.plugin.data.save(true);
       },
       () => {

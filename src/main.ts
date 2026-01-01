@@ -4,9 +4,10 @@ import {
   ReminderPluginFileSystem,
   ReminderPluginUI,
 } from "plugin";
+import { DailyNoteManager } from "plugin/daily-note-manager";
 import { Reminders } from "model/reminder";
 import { DATE_TIME_FORMATTER } from "model/time";
-import { App, Plugin } from "obsidian";
+import { App, Plugin, TFile } from "obsidian";
 import type { PluginManifest } from "obsidian";
 
 export default class ReminderPlugin extends Plugin {
@@ -15,6 +16,7 @@ export default class ReminderPlugin extends Plugin {
   private _reminders: Reminders;
   private _fileSystem: ReminderPluginFileSystem;
   private _notificationWorker: NotificationWorker;
+  private _dailyNoteManager: DailyNoteManager;
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
     this._reminders = new Reminders(() => {
@@ -41,6 +43,12 @@ export default class ReminderPlugin extends Plugin {
       },
     );
     this._notificationWorker = new NotificationWorker(this);
+    this._dailyNoteManager = new DailyNoteManager(
+      app,
+      this.reminders,
+      this.settings,
+      (reminder, checked) => this.fileSystem.updateReminder(reminder, checked)
+    );
   }
 
   override async onload() {
@@ -50,6 +58,41 @@ export default class ReminderPlugin extends Plugin {
       this.ui.onLayoutReady();
       this.fileSystem.onload(this);
       this._notificationWorker.startPeriodicTask();
+
+      this.registerEvent(
+        this.app.vault.on("modify", (file) => {
+          if (file instanceof TFile) {
+            this._dailyNoteManager.handleFileModify(file);
+          }
+        })
+      );
+      this.reminders.addOnChange(() => {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (activeFile) {
+          const fileDate = this._dailyNoteManager.getDailyNoteDate(activeFile);
+          if (fileDate) {
+            this._dailyNoteManager.updateDailyNote(true, fileDate);
+            return;
+          }
+        }
+        this._dailyNoteManager.updateDailyNote();
+      });
+
+      this.addCommand({
+        id: "sync-daily-note",
+        name: "Sync Daily Note",
+        callback: () => {
+          const activeFile = this.app.workspace.getActiveFile();
+          if (activeFile) {
+            const fileDate = this._dailyNoteManager.getDailyNoteDate(activeFile);
+            if (fileDate) {
+              this._dailyNoteManager.updateDailyNote(false, fileDate);
+              return;
+            }
+          }
+          this._dailyNoteManager.updateDailyNote(false);
+        },
+      });
     });
   }
 

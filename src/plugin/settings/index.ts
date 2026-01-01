@@ -46,6 +46,8 @@ export class Settings {
   shortDateWithWeekdayDisplayFormat: SettingModel<string, string>;
   editDetectionSec: SettingModel<number, number>;
   reminderCheckIntervalSec: SettingModel<number, number>;
+  autoEmbedTodosInDailyNote: SettingModel<boolean, boolean>;
+  dailyNoteSectionMarker: SettingModel<string, string>;
 
   constructor() {
     const reminderFormatSettings = new ReminderFormatSettings(this.settings);
@@ -281,6 +283,23 @@ export class Settings {
       .number(5)
       .build(new RawSerde());
 
+    this.autoEmbedTodosInDailyNote = this.settings
+      .newSettingBuilder()
+      .key("autoEmbedTodosInDailyNote")
+      .name("Auto embed todos in daily note")
+      .desc("Automatically embed todos of today into today's daily note.")
+      .toggle(false)
+      .build(new RawSerde());
+
+    this.dailyNoteSectionMarker = this.settings
+      .newSettingBuilder()
+      .key("dailyNoteSectionMarker")
+      .name("Daily note section marker")
+      .desc("Marker for the section in the daily note where todos will be embedded.")
+      .text("reminder")
+      .placeHolder("reminder")
+      .build(new RawSerde());
+
     this.settings
       .newGroup("Notification Settings")
       .addSettings(
@@ -325,6 +344,8 @@ export class Settings {
         this.editDetectionSec,
         this.reminderCheckIntervalSec,
         this.weekStart,
+        this.autoEmbedTodosInDailyNote,
+        this.dailyNoteSectionMarker,
       );
 
     const config = new ReminderFormatConfig();

@@ -52,7 +52,7 @@ export class ReminderPluginFileSystem {
       return false;
     }
     const content = new Content(file.path, await this.vault.cachedRead(file));
-    const reminders = content.getReminders();
+    const reminders = content.getReminders(false);
     if (reminders.length > 0) {
       if (!this.reminders.replaceFile(file.path, reminders)) {
         return false;

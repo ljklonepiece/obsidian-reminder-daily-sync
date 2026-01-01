@@ -8,6 +8,7 @@ interface ReminderData {
   title: string;
   time: string;
   rowNumber: number;
+  done: boolean;
 }
 
 export class PluginData {
@@ -66,7 +67,7 @@ export class PluginData {
                 d.title,
                 DateTime.parse(d.time),
                 d.rowNumber,
-                false,
+                d.done || false,
               ),
           ),
         );
@@ -93,6 +94,7 @@ export class PluginData {
         title: rr.title,
         time: rr.time.toString(),
         rowNumber: rr.rowNumber,
+        done: rr.done,
       }));
     });
     const settings = {};
